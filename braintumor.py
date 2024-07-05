@@ -96,21 +96,32 @@ model = Model(inputs=base_model.input, outputs=predictions)
 model.compile(optimizer=tf.keras.optimizers.Adam(1e-5), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-# Gewichte laden
-#model.load_weights('model_checkpoints/weights_epoch_10.h5')
+# Load the weights of the model you want to continue training with
+weights_path = 'model_checkpoints/best_model.h5'
 
+if os.path.exists(weights_path):
+    model.load_weights(weights_path)
+else:
+    print(f"No weights file found at {weights_path}, training from scratch.")
+
+best_model_path = 'model_checkpoints/best_model.h5'
 
 # Setting up checkpoints callbacks
 checkpoint_callback = ModelCheckpoint(
-    filepath='model_checkpoints/weights_epoch_{epoch:02d}.h5',
+    filepath='model_checkpoints/model-{epoch:02d}-{val_loss:.2f}.h5',
+    monitor='val_loss',
     save_freq='epoch',
     save_best_only=True,
     save_weights_only=False,
+    mode='min',
     verbose=1
 )
+
 early_stopping = EarlyStopping(
     monitor='val_loss',
     patience=5,
+    verbose=1,
+    mode='min',
     restore_best_weights=True
 )
 
@@ -123,7 +134,7 @@ reduce_lr = ReduceLROnPlateau(
 )
 
 # Number of training epochs
-NUM_EPOCHS = 50
+NUM_EPOCHS = 10
 
 # Train the model and save the history
 history = model.fit(
@@ -134,7 +145,13 @@ history = model.fit(
     callbacks=[checkpoint_callback, early_stopping, reduce_lr]
 )
 
+# After the training, save the best model separately
+model.save(best_model_path)
+
 now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+if not os.path.exists('plots'):
+    os.makedirs('plots')
 
 # Plot the training history
 history_df = pd.DataFrame(history.history)
@@ -143,7 +160,7 @@ sns.lineplot(data=history_df[['accuracy', 'val_accuracy']], markers = True)
 plt.title('Accuracy Plot')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
-plt.savefig(f"Accuracy_Plot_{now}.png")
+plt.savefig(f"plots/Accuracy_Plot_{now}.png")
 plt.show()
 
 # Plot the training history again but with loss and val_loss
@@ -152,7 +169,7 @@ sns.lineplot(data=history_df[['loss', 'val_loss']], markers = True)
 plt.title('Loss Plot')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
-plt.savefig(f"Loss_Plot_{now}.png")
+plt.savefig(f"plots/Loss_Plot_{now}.png")
 plt.show()
 
 # Evaluate the model
@@ -175,5 +192,5 @@ sns.heatmap(conf_df, annot=True, fmt='d', cmap='Blues')
 plt.title('Confusion Matrix')
 plt.xlabel('Predicted Labels')
 plt.ylabel('True Labels')
-plt.savefig(f"Confusion Matrix_{now}.png")
+plt.savefig(f"plots/Confusion Matrix_{now}.png")
 plt.show()
