@@ -1,9 +1,11 @@
+import os
 from tensorflow.keras import Model
 from tensorflow.keras.layers import *
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 import numpy as np
 import glob
+import sys
 
 # Model configuration (Must have the same architecture as the trained model)
 base_model = tf.keras.applications.EfficientNetV2B1(weights=None, include_top=False, input_shape=(300, 300, 3))
@@ -17,8 +19,11 @@ x = Dense(512, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.
 predictions = Dense(4, activation='softmax', kernel_regularizer=tf.keras.regularizers.l2(0.01))(x)
 model = Model(inputs=base_model.input, outputs=predictions)
 
-# Load the weights of the trained model
-model.load_weights('model_checkpoints/best_model.h5')
+weights_path = 'model_checkpoints/best_model.h5'
+if os.path.exists(weights_path):
+    model.load_weights(weights_path)
+else:
+    sys.exit("No weights file found. Please run braintumor.py to generate the model before running this script.")
 
 # Get a list of image file paths
 img_paths = glob.glob('demo/*.jpg')  # Replace this with the actual path to your images directory if needed
