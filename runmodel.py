@@ -18,7 +18,7 @@ predictions = Dense(4, activation='softmax', kernel_regularizer=tf.keras.regular
 model = Model(inputs=base_model.input, outputs=predictions)
 
 # Load the weights of the trained model
-model.load_weights('model_checkpoints/weights_epoch_50.h5')
+model.load_weights('model_checkpoints/best_model.h5')
 
 # Get a list of image file paths
 img_paths = glob.glob('demo/*.jpg')  # Replace this with the actual path to your images directory if needed
